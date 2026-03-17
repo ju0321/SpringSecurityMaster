@@ -1,24 +1,46 @@
 package io.security.springsecuritymaster;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http){
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-        .formLogin(Customizer.withDefaults());
+        .formLogin(form -> form
+            .loginPage("/loginPage")
+            .loginProcessingUrl("/loginProc")
+            .defaultSuccessUrl("/", true)
+            .failureUrl("/failed")
+            .usernameParameter("userId")
+            .passwordParameter("password")
+            .successHandler((request, response, authentication) -> {
+              System.out.println("authenrication : " + authentication);
+              response.sendRedirect("/home");
+            })
+            .failureHandler((request, response, exceptioin) ->{
+                System.out.println("exception : " + exceptioin.getMessage());
+                response.sendRedirect("/login");
+            })
+            .permitAll()
+        );
 
     return http.build();
   }
